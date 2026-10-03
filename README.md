@@ -1,16 +1,15 @@
-# 傲骨心（Aogx）—— 个人博客前端
+# 傲骨心（Aogx）—— 个人博客
 
-基于 **Vue 3 + Vite + Vue Router** 构建的博客前端，内置 Mock 数据可独立运行。
-> 注：正在评估迁移到静态站点生成器（Astro / Hugo），详见仓库讨论。
+基于 **Astro** 的静态博客：Markdown 写作，构建产物为纯静态页面，可免费托管到 GitHub Pages / Vercel / Netlify / Cloudflare Pages。
 
 ## 功能
 
+- **Markdown 写作**：`src/content/blog/` 下每个 `.md` 文件就是一篇文章（frontmatter：标题/日期/分类/标签/封面）
 - **首页**：整屏「寒夜首图」——必应每日一图作背景（自动去饱和冷色处理，多级降级保证可用），站名与座右铭压图排版；下方为按年份分组的极简文章列表 + 搜索（`Ctrl/⌘ + K` 快捷聚焦）
-- **文章详情**：Markdown 渲染、宽屏右侧目录（TOC，滚动高亮）、上一篇/下一篇导航、阅读时长与字数估算（meta 均带图标）
-- **归档**：按年份分组的全部文章
-- **分类 / 标签**：独立的分类列表页与标签云页，可跳转到对应筛选列表
+- **文章详情**：Markdown 渲染、宽屏右侧目录（TOC，滚动高亮，Astro 自动生成）、上一篇/下一篇导航、阅读时长与字数估算
+- **归档 / 分类 / 标签**：年份时间线、分类列表、标签云，及对应的筛选页
 - **深色模式**：跟随系统 + 手动切换，本地持久化，刷新不闪烁（深色为 GitHub Dark 风格）
-- **其他**：专业 Logo 与全套 Lucide 线性图标（首页刻意保持无图标）、页面过渡动画、悬停微交互、响应式布局、404 页面
+- **其他**：寒夜墨色 Logo（与 favicon 同源）、Lucide 线性图标、微点阵背景、响应式布局、404 页面
 
 ## 快速开始
 
@@ -21,59 +20,73 @@ npm run build     # 生产构建，输出到 dist/
 npm run preview   # 本地预览构建产物
 ```
 
+## 写一篇文章
+
+在 `src/content/blog/` 新建 `my-post.md`：
+
+```markdown
+---
+title: 文章标题
+excerpt: 一句话摘要
+date: 2026-10-04
+category: 前端开发
+tags: [Vue, 随笔]
+cover: 0
+---
+
+正文使用 Markdown 语法……
+```
+
+保存即完成，`npm run dev` 里即时可见；推送后由托管平台自动构建发布。
+
 ## 目录结构
 
 ```
-├── index.html                 # 入口 HTML（含防闪烁主题脚本）
-├── vite.config.js
+├── astro.config.mjs           # Astro 配置（站点域名、端口）
 ├── public/
 │   └── favicon.svg            # 站点 Logo（寒夜墨色 + 白色孤星）
+├── scripts/                   # 一次性维护脚本（如内容转换）
 └── src/
-    ├── main.js                # 应用入口
-    ├── App.vue                # 根组件：头部 / 路由出口 / 页脚
-    ├── config.js              # 站点信息（名称、座右铭、作者等）
-    ├── assets/
-    │   └── main.css           # 设计变量、深色模式、Markdown 正文样式
-    ├── api/
-    │   ├── index.js           # 数据层（当前为 Mock，可替换为 HTTP 请求）
-    │   ├── mock.js            # 本地 Mock 数据源
-    │   └── bing.js            # 必应每日一图（多级降级 + 当日缓存）
-    ├── data/
-    │   └── posts.js           # 示例文章数据
-    ├── composables/
-    │   └── useTheme.js        # 深浅色主题切换
-    ├── utils/
-    │   ├── format.js          # 日期、阅读时长等格式化工具
-    │   └── markdown.js        # Markdown 渲染 + 目录（TOC）提取
-    ├── router/
-    │   └── index.js           # 路由（含 404 兜底与滚动行为）
+    ├── content.config.ts      # 内容集合定义与 frontmatter 校验
+    ├── content/blog/          # ★ 文章（Markdown）
+    ├── layouts/
+    │   └── BaseLayout.astro   # 全站骨架（head、主题防闪烁脚本、导航页脚）
     ├── components/
-    │   ├── SiteHeader.vue     # 顶部导航 + 主题切换
-    │   ├── SiteFooter.vue
-    │   ├── LogoMark.vue       # 站点 Logo（与 favicon 同源）
-    │   ├── AppIcon.vue        # 全站统一图标库（Lucide 规范）
-    │   └── PostItem.vue       # 文章列表行
-    └── views/
-        ├── HomeView.vue       # 首页
-        ├── PostView.vue       # 文章详情
-        ├── ArchiveView.vue    # 归档
-        ├── CategoriesView.vue # 分类
-        ├── TagsView.vue       # 标签云
-        ├── FilteredView.vue   # 分类 / 标签筛选列表（复用）
-        ├── AboutView.vue
-        └── NotFoundView.vue
+    │   ├── SiteHeader.astro   # 顶部导航 + 主题切换
+    │   ├── SiteFooter.astro
+    │   ├── LogoMark.astro     # 站点 Logo
+    │   ├── AppIcon.astro      # 统一图标库（Lucide 规范）
+    │   └── PostItem.astro     # 文章列表行
+    ├── pages/                 # 路由 = 文件结构
+    │   ├── index.astro        # 首页（寒夜首图 + 列表 + 搜索）
+    │   ├── posts/[slug].astro # 文章详情（TOC / 上下篇）
+    │   ├── archive.astro      # 归档
+    │   ├── categories.astro   # 分类
+    │   ├── category/[name].astro
+    │   ├── tags.astro         # 标签云
+    │   ├── tag/[name].astro
+    │   ├── about.astro
+    │   └── 404.astro
+    ├── scripts/
+    │   └── bing.js            # 必应每日一图（多级降级 + 当日缓存）
+    ├── styles/
+    │   └── main.css           # 设计变量、深色模式、Markdown 正文样式
+    ├── utils/
+    │   └── format.js          # 日期、阅读时长等工具
+    └── config.js              # 站点信息（名称、座右铭、作者、社交链接）
 ```
 
 ## 常见自定义
 
-| 想改什么             | 去哪里改                        |
-| -------------------- | ------------------------------- |
-| 站点名称、座右铭、作者 | `src/config.js`                 |
-| 文章内容             | `src/data/posts.js`             |
-| 主题色、字体、圆角   | `src/assets/main.css` 顶部变量  |
-| 导航链接             | `src/components/SiteHeader.vue` |
-| 必应背景图强制指定   | `src/api/bing.js` 的注释说明    |
+| 想改什么               | 去哪里改                            |
+| ---------------------- | ----------------------------------- |
+| 站点名称、座右铭、作者 | `src/config.js`                     |
+| 文章                   | `src/content/blog/*.md`             |
+| 主题色、字体、圆角     | `src/styles/main.css` 顶部变量      |
+| 导航链接               | `src/components/SiteHeader.astro`   |
+| 必应背景图强制指定     | `src/scripts/bing.js` 的注释说明    |
+| 站点域名               | `astro.config.mjs` 的 `site` 字段   |
 
-## 部署提示
+## 部署
 
-构建产物为纯静态文件（`dist/`），可部署到任意静态托管（Nginx、Vercel、Netlify、GitHub Pages 等）。项目使用 History 路由，服务器需配置 SPA 回退：所有未匹配路径返回 `index.html`。
+构建产物为纯静态文件（`dist/`），推荐直接连接 GitHub 仓库到 **Vercel / Netlify / Cloudflare Pages**（零配置自动识别 Astro），或用 GitHub Actions 发布到 **GitHub Pages**。服务器自建则用任意静态服务器托管 `dist/` 即可。

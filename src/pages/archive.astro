@@ -1,0 +1,45 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PostItem from '../components/PostItem.astro'
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+)
+
+const groups = []
+const byYear = new Map()
+for (const post of posts) {
+  const year = String(post.data.date.getFullYear())
+  if (!byYear.has(year)) {
+    byYear.set(year, [])
+    groups.push([year, byYear.get(year)])
+  }
+  byYear.get(year).push(post)
+}
+---
+
+<BaseLayout title="归档">
+  <div class="container">
+    <div class="page-head">
+      <h1>归档</h1>
+      <p class="page-sub">共 {posts.length} 篇文章，路虽远，行则将至。</p>
+    </div>
+
+    {
+      groups.map(([year, list]) => (
+        <div class="year-group">
+          <div class="year-head">
+            <span class="year-name">{year}</span>
+            <span class="year-count">{list.length} 篇</span>
+          </div>
+          <div class="post-list">
+            {list.map((post) => (
+              <PostItem post={post} />
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</BaseLayout>

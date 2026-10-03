@@ -1,0 +1,42 @@
+---
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+import { siteConfig } from '../config.js'
+import '../styles/main.css'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const { title, description = siteConfig.description } = Astro.props
+const fullTitle = title ? `${title} · ${siteConfig.name}` : `${siteConfig.name} · ${siteConfig.latinName}`
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+    <script is:inline>
+      // 在应用渲染前读取本地主题设置，避免首屏闪烁
+      ;(function () {
+        var saved = localStorage.getItem('blog-theme')
+        var theme =
+          saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
+  </head>
+  <body>
+    <SiteHeader />
+    <main class="app-main">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

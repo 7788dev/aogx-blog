@@ -1,0 +1,98 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PostItem from '../components/PostItem.astro'
+import { siteConfig } from '../config.js'
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+)
+
+// 按年份分组（posts 已按日期倒序，顺序分组即为新的年份在前）
+const groups = []
+const byYear = new Map()
+for (const post of posts) {
+  const year = String(post.data.date.getFullYear())
+  if (!byYear.has(year)) {
+    byYear.set(year, [])
+    groups.push([year, byYear.get(year)])
+  }
+  byYear.get(year).push(post)
+}
+
+const catCount = new Set(posts.map((p) => p.data.category)).size
+const tagCount = new Set(posts.flatMap((p) => p.data.tags)).size
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="hero-photo" id="hero-photo"></div>
+    <div class="hero-overlay"></div>
+
+    <div class="container hero-content">
+      <p class="hero-latin">{siteConfig.latinName.toUpperCase()}</p>
+      <h1 class="hero-title">{siteConfig.name}</h1>
+      <p class="hero-motto">{siteConfig.motto}</p>
+      <p class="hero-stats">
+        {posts.length} 篇文章 · {catCount} 个分类 · {tagCount} 个标签
+      </p>
+      <p class="hero-credit" id="hero-credit" hidden></p>
+    </div>
+
+    <span class="hero-scroll" aria-hidden="true"></span>
+  </section>
+
+  <section class="container posts-section">
+    <div class="search-box">
+      <input id="post-search" type="search" placeholder="搜索文章…" autocomplete="off" />
+      <span class="kbd">Ctrl K</span>
+    </div>
+
+    {
+      groups.map(([year, list]) => (
+        <div class="year-group" data-year-group>
+          <div class="year-head">
+            <span class="year-name">{year}</span>
+            <span class="year-count">{list.length} 篇</span>
+          </div>
+          <div class="post-list">
+            {list.map((post) => (
+              <PostItem post={post} />
+            ))}
+          </div>
+        </div>
+      ))
+    }
+    <div id="search-empty" class="state-hint" hidden>没有找到匹配的文章，换个关键词试试？</div>
+  </section>
+
+  <script src="../scripts/bing.js"></script>
+  <script>
+    // 关键词搜索：本地过滤当前列表；Ctrl/⌘ + K 快捷聚焦
+    const input = document.getElementById('post-search')
+    const rows = [...document.querySelectorAll('.post-row')]
+    const yearGroups = [...document.querySelectorAll('[data-year-group]')]
+    const empty = document.getElementById('search-empty')
+
+    input?.addEventListener('input', () => {
+      const k = input.value.trim().toLowerCase()
+      rows.forEach((row) => {
+        const hit = !k || (row.dataset.search || '').toLowerCase().includes(k)
+        row.style.display = hit ? '' : 'none'
+      })
+      yearGroups.forEach((group) => {
+        const visible = group.querySelectorAll('.post-row:not([style*="none"])').length
+        group.style.display = visible ? '' : 'none'
+      })
+      const visibleTotal = rows.filter((r) => r.style.display !== 'none').length
+      if (empty) empty.hidden = visibleTotal > 0
+    })
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        input?.focus()
+      }
+    })
+  </script>
+</BaseLayout>

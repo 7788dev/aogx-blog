@@ -1,0 +1,14 @@
+---
+import { monthDay } from '../utils/format.js'
+
+const { post } = Astro.props
+---
+
+<a
+  href={`/posts/${post.id}/`}
+  class="post-row"
+  data-search={[post.data.title, post.data.category, ...post.data.tags].join(' ')}
+>
+  <span class="row-title">{post.data.title}</span>
+  <span class="row-date">{monthDay(post.data.date)}</span>
+</a>

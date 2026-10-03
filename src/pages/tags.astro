@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import AppIcon from '../components/AppIcon.astro'
+
+const posts = await getCollection('blog')
+
+const counts = new Map()
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1)
+  }
+}
+const tags = [...counts.entries()]
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => b.count - a.count)
+
+// 标签字号随文章数轻微缩放，封顶 1.2rem
+function tagSize(count) {
+  return `${Math.min(1.2, 0.9 + (count - 1) * 0.08)}rem`
+}
+---
+
+<BaseLayout title="标签">
+  <div class="container">
+    <div class="page-head">
+      <h1>标签</h1>
+      <p class="page-sub">共 {tags.length} 个标签，按话题找到同类文章</p>
+    </div>
+
+    <div class="tag-cloud">
+      {
+        tags.map((tag) => (
+          <a class="tag-item" href={`/tag/${tag.name}/`} style={`font-size: ${tagSize(tag.count)}`}>
+            <AppIcon name="hash" size={13} class="tag-icon" />
+            {tag.name}
+            <sup>{tag.count}</sup>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

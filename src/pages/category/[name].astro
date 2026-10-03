@@ -1,0 +1,39 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PostItem from '../../components/PostItem.astro'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog')
+  const categories = [...new Set(posts.map((p) => p.data.category))]
+  return categories.map((category) => ({
+    params: { name: category },
+    props: { category },
+  }))
+}
+
+const { category } = Astro.props
+const posts = (await getCollection('blog'))
+  .filter((p) => p.data.category === category)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+---
+
+<BaseLayout title={`分类：${category}`}>
+  <div class="container">
+    <div class="page-head">
+      <p class="crumb">
+        <a href="/">首页</a>
+        <span> / </span>
+        <span>分类</span>
+      </p>
+      <h1>
+        分类：<span class="highlight">{category}</span>
+      </h1>
+      <p class="page-sub">共 {posts.length} 篇文章</p>
+    </div>
+
+    <div class="post-list">
+      {posts.map((post) => <PostItem post={post} />)}
+    </div>
+  </div>
+</BaseLayout>

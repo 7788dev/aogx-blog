@@ -1,0 +1,46 @@
+---
+import AppIcon from './AppIcon.astro'
+import { siteConfig } from '../config.js'
+
+const links = [
+  { label: '首页', to: '/' },
+  { label: '归档', to: '/archive' },
+  { label: '分类', to: '/categories' },
+  { label: '标签', to: '/tags' },
+  { label: '关于', to: '/about' },
+]
+
+// 当前路径（去掉尾斜杠）用于导航高亮
+const current = Astro.url.pathname.replace(/\/+$/, '') || '/'
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/" class="brand">{siteConfig.name}</a>
+
+    <nav class="site-nav" aria-label="主导航">
+      {
+        links.map((link) => (
+          <a href={link.to} class="nav-link" aria-current={current === link.to ? 'page' : undefined}>
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <button class="icon-btn" type="button" data-theme-toggle title="切换深浅色模式">
+      <span class="icon-sun"><AppIcon name="sun" size={17} /></span>
+      <span class="icon-moon"><AppIcon name="moon" size={17} /></span>
+    </button>
+  </div>
+</header>
+
+<script>
+  document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+      document.documentElement.dataset.theme = next
+      localStorage.setItem('blog-theme', next)
+    })
+  })
+</script>

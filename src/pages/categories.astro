@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import AppIcon from '../components/AppIcon.astro'
+
+const posts = await getCollection('blog')
+
+// 分类及文章数（含全部已发布文章），按数量倒序
+const counts = new Map()
+for (const post of posts) {
+  counts.set(post.data.category, (counts.get(post.data.category) ?? 0) + 1)
+}
+const categories = [...counts.entries()]
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => b.count - a.count)
+---
+
+<BaseLayout title="分类">
+  <div class="container">
+    <div class="page-head">
+      <h1>分类</h1>
+      <p class="page-sub">按话题浏览文章</p>
+    </div>
+
+    <div class="row-list">
+      {
+        categories.map((cat) => (
+          <a class="cat-row" href={`/category/${cat.name}/`}>
+            <AppIcon name="folder" size={15} class="cat-icon" />
+            <span class="cat-name">{cat.name}</span>
+            <span class="cat-count">{cat.count} 篇</span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

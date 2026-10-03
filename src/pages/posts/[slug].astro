@@ -1,0 +1,145 @@
+---
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import AppIcon from '../../components/AppIcon.astro'
+import { formatDate, readingMinutes, charCount } from '../../utils/format.js'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog')
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }))
+}
+
+const { post } = Astro.props
+const all = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+)
+const index = all.findIndex((p) => p.id === post.id)
+const prev = all[index + 1] ?? null // 更旧
+const next = all[index - 1] ?? null // 更新
+
+const { Content, headings } = await render(post)
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3)
+const body = post.body ?? ''
+---
+
+<BaseLayout title={post.data.title} description={post.data.excerpt}>
+  <div class="container">
+    <article class="post-page">
+      <header class="post-header">
+        <a class="post-cat" href={`/category/${post.data.category}/`}>{post.data.category}</a>
+        <h1 class="post-title">{post.data.title}</h1>
+        <p class="post-meta">
+          <span class="meta-item">
+            <AppIcon name="calendar" size={14} />
+            <time>{formatDate(post.data.date)}</time>
+          </span>
+          <span class="meta-item">
+            <AppIcon name="clock" size={14} />
+            <span>约 {readingMinutes(body)} 分钟</span>
+          </span>
+          <span class="meta-item">
+            <AppIcon name="file-text" size={14} />
+            <span>{charCount(body)} 字</span>
+          </span>
+        </p>
+      </header>
+
+      <div class="post-content">
+        <Content />
+      </div>
+
+      <div class="tag-row">
+        {
+          post.data.tags.map((tag) => (
+            <a class="tag-link" href={`/tag/${tag}/`}>
+              <AppIcon name="hash" size={12} />
+              {tag}
+            </a>
+          ))
+        }
+      </div>
+
+      <nav class="post-neighbor" aria-label="上下篇">
+        {
+          prev ? (
+            <a class="neighbor" href={`/posts/${prev.id}/`}>
+              <span class="neighbor-label">← 上一篇</span>
+              <span class="neighbor-title">{prev.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          next ? (
+            <a class="neighbor next" href={`/posts/${next.id}/`}>
+              <span class="neighbor-label">下一篇 →</span>
+              <span class="neighbor-title">{next.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+      </nav>
+
+      <div class="post-back">
+        <a class="text-link" href="/archive/">← 返回归档</a>
+      </div>
+    </article>
+
+    {
+      toc.length > 0 && (
+        <aside class="toc" aria-label="文章目录">
+          <p class="toc-title">
+            <AppIcon name="list" size={13} />
+            目录
+          </p>
+          <nav class="toc-list">
+            {toc.map((heading) => (
+              <a
+                class={`toc-link lvl${heading.depth}`}
+                href={`#${heading.slug}`}
+                data-target={heading.slug}
+              >
+                {heading.text}
+              </a>
+            ))}
+          </nav>
+        </aside>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<script>
+  // 目录：平滑滚动 + 滚动高亮（标题进入视口上部 30% 区域时视为「当前章节」）
+  const links = [...document.querySelectorAll('.toc-link')]
+  if (links.length) {
+    const setActive = (id) =>
+      links.forEach((link) => link.classList.toggle('active', link.dataset.target === id))
+    setActive(links[0]?.dataset.target)
+
+    links.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault()
+        const target = document.getElementById(link.dataset.target)
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) setActive(entry.target.id)
+          }
+        },
+        { rootMargin: '-90px 0px -70% 0px' },
+      )
+      links.forEach((link) => {
+        const target = document.getElementById(link.dataset.target)
+        if (target) observer.observe(target)
+      })
+    }
+  }
+</script>
