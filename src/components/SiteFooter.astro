@@ -3,11 +3,13 @@ import { siteConfig } from '../config.js'
 import { withBase } from '../utils/links.js'
 
 const year = new Date().getFullYear()
+// 起始年与当前年相同时只显示单年；跨年后自动变为「2026–2027」
+const yearRange = year > siteConfig.since ? `${siteConfig.since}–${year}` : `${siteConfig.since}`
 ---
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <p>© {siteConfig.since}–{year} {siteConfig.latinName}</p>
+    <p>© {yearRange} {siteConfig.latinName}</p>
     <p class="footer-meta">
       {siteConfig.slogan} · 由 Astro 驱动 · <a class="rss-link" href={withBase('rss.xml')}>RSS</a>
     </p>

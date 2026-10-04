@@ -7,7 +7,7 @@ export const siteConfig = {
   bio: '喜欢深度思考，在这里分享自己的想法与经验。',
   description: '一个关于思考、经验与生活随想的个人博客',
   author: 'Aogx',
-  since: 2024,
+  since: 2026,
   github: 'https://github.com/7788dev',
   email: 'mlooks@126.com',
 }
