@@ -1,0 +1,54 @@
+---
+// giscus 评论（基于 GitHub Discussions）
+// 前置条件（一次性）：仓库公开 + 在 https://github.com/apps/giscus 安装并授权本仓库
+// 主题联动：跟随站内深浅色切换（SiteHeader 切换时会广播 themechange 事件）
+
+// 以下两个 ID 来自 giscus.app 配置页（可用 GitHub GraphQL API 查询得到）
+const GISCUS_REPO = '7788dev/aogx-blog'
+const GISCUS_REPO_ID = 'R_kgDOU6gRug'
+const GISCUS_CATEGORY = 'Announcements'
+const GISCUS_CATEGORY_ID = 'DIC_kwDOU6gRus4DHAJr'
+---
+
+<section class="comments">
+  <script
+    is:inline
+    src="https://giscus.app/client.js"
+    data-repo={GISCUS_REPO}
+    data-repo-id={GISCUS_REPO_ID}
+    data-category={GISCUS_CATEGORY}
+    data-category-id={GISCUS_CATEGORY_ID}
+    data-mapping="pathname"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="zh-CN"
+    data-loading="lazy"
+    crossorigin="anonymous"
+    async
+  ></script>
+</section>
+
+<script>
+  // 深浅色切换时同步 giscus 主题
+  function syncGiscusTheme() {
+    const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+    document
+      .querySelector('iframe.giscus-frame')
+      ?.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app')
+  }
+
+  document.addEventListener('themechange', syncGiscusTheme)
+  // giscus iframe 是懒加载的，加载完成后补一次同步
+  window.addEventListener('load', syncGiscusTheme)
+</script>
+
+<style>
+  .comments {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+</style>

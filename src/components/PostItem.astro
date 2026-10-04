@@ -1,11 +1,12 @@
 ---
 import { monthDay } from '../utils/format.js'
+import { withBase } from '../utils/links.js'
 
 const { post } = Astro.props
 ---
 
 <a
-  href={`/posts/${post.id}/`}
+  href={withBase(`/posts/${post.id}/`)}
   class="post-row"
   data-search={[post.data.title, post.data.category, ...post.data.tags].join(' ')}
 >

@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import PostItem from '../../components/PostItem.astro'
+import { withBase } from '../../utils/links.js'
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog')
@@ -22,7 +23,7 @@ const posts = (await getCollection('blog'))
   <div class="container">
     <div class="page-head">
       <p class="crumb">
-        <a href="/">首页</a>
+        <a href={withBase('/')}>首页</a>
         <span> / </span>
         <span>分类</span>
       </p>

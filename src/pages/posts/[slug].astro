@@ -2,7 +2,9 @@
 import { getCollection, render } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import AppIcon from '../../components/AppIcon.astro'
+import Giscus from '../../components/Giscus.astro'
 import { formatDate, readingMinutes, charCount } from '../../utils/format.js'
+import { withBase } from '../../utils/links.js'
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog')
@@ -26,7 +28,7 @@ const body = post.body ?? ''
   <div class="container">
     <article class="post-page">
       <header class="post-header">
-        <a class="post-cat" href={`/category/${post.data.category}/`}>{post.data.category}</a>
+        <a class="post-cat" href={withBase(`/category/${post.data.category}/`)}>{post.data.category}</a>
         <h1 class="post-title">{post.data.title}</h1>
         <p class="post-meta">
           <span class="meta-item">
@@ -51,7 +53,7 @@ const body = post.body ?? ''
       <div class="tag-row">
         {
           post.data.tags.map((tag) => (
-            <a class="tag-link" href={`/tag/${tag}/`}>
+            <a class="tag-link" href={withBase(`/tag/${tag}/`)}>
               <AppIcon name="hash" size={12} />
               {tag}
             </a>
@@ -62,7 +64,7 @@ const body = post.body ?? ''
       <nav class="post-neighbor" aria-label="上下篇">
         {
           prev ? (
-            <a class="neighbor" href={`/posts/${prev.id}/`}>
+            <a class="neighbor" href={withBase(`/posts/${prev.id}/`)}>
               <span class="neighbor-label">← 上一篇</span>
               <span class="neighbor-title">{prev.data.title}</span>
             </a>
@@ -72,7 +74,7 @@ const body = post.body ?? ''
         }
         {
           next ? (
-            <a class="neighbor next" href={`/posts/${next.id}/`}>
+            <a class="neighbor next" href={withBase(`/posts/${next.id}/`)}>
               <span class="neighbor-label">下一篇 →</span>
               <span class="neighbor-title">{next.data.title}</span>
             </a>
@@ -83,8 +85,10 @@ const body = post.body ?? ''
       </nav>
 
       <div class="post-back">
-        <a class="text-link" href="/archive/">← 返回归档</a>
+        <a class="text-link" href={withBase('/archive/')}>← 返回归档</a>
       </div>
+
+      <Giscus />
     </article>
 
     {

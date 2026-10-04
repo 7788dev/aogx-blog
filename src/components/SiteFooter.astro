@@ -1,5 +1,6 @@
 ---
 import { siteConfig } from '../config.js'
+import { withBase } from '../utils/links.js'
 
 const year = new Date().getFullYear()
 ---
@@ -7,6 +8,19 @@ const year = new Date().getFullYear()
 <footer class="site-footer">
   <div class="container footer-inner">
     <p>© {siteConfig.since}–{year} {siteConfig.latinName}</p>
-    <p class="footer-meta">{siteConfig.slogan} · 由 Astro 驱动</p>
+    <p class="footer-meta">
+      {siteConfig.slogan} · 由 Astro 驱动 · <a class="rss-link" href={withBase('rss.xml')}>RSS</a>
+    </p>
   </div>
 </footer>
+
+<style>
+  .rss-link {
+    color: inherit;
+    transition: color 0.2s;
+  }
+
+  .rss-link:hover {
+    color: var(--accent);
+  }
+</style>

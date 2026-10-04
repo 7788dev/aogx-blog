@@ -1,6 +1,7 @@
 ---
 import AppIcon from './AppIcon.astro'
 import { siteConfig } from '../config.js'
+import { withBase } from '../utils/links.js'
 
 const links = [
   { label: '首页', to: '/' },
@@ -10,18 +11,24 @@ const links = [
   { label: '关于', to: '/about' },
 ]
 
-// 当前路径（去掉尾斜杠）用于导航高亮
-const current = Astro.url.pathname.replace(/\/+$/, '') || '/'
+// 当前路径（去掉尾斜杠与 base 前缀）用于导航高亮
+const base = import.meta.env.BASE_URL.replace(/\/+$/, '')
+const current =
+  Astro.url.pathname.replace(/\/+$/, '').replace(base, '') || '/'
 ---
 
 <header class="site-header">
   <div class="container header-inner">
-    <a href="/" class="brand">{siteConfig.name}</a>
+    <a href={withBase('/')} class="brand">{siteConfig.name}</a>
 
     <nav class="site-nav" aria-label="主导航">
       {
         links.map((link) => (
-          <a href={link.to} class="nav-link" aria-current={current === link.to ? 'page' : undefined}>
+          <a
+            href={withBase(link.to)}
+            class="nav-link"
+            aria-current={current === link.to ? 'page' : undefined}
+          >
             {link.label}
           </a>
         ))
@@ -41,6 +48,8 @@ const current = Astro.url.pathname.replace(/\/+$/, '') || '/'
       const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
       document.documentElement.dataset.theme = next
       localStorage.setItem('blog-theme', next)
+      // 通知页面内嵌组件（如 giscus 评论）同步主题
+      document.dispatchEvent(new CustomEvent('themechange'))
     })
   })
 </script>

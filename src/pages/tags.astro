@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import AppIcon from '../components/AppIcon.astro'
+import { withBase } from '../utils/links.js'
 
 const posts = await getCollection('blog')
 
@@ -31,7 +32,7 @@ function tagSize(count) {
     <div class="tag-cloud">
       {
         tags.map((tag) => (
-          <a class="tag-item" href={`/tag/${tag.name}/`} style={`font-size: ${tagSize(tag.count)}`}>
+          <a class="tag-item" href={withBase(`/tag/${tag.name}/`)} style={`font-size: ${tagSize(tag.count)}`}>
             <AppIcon name="hash" size={13} class="tag-icon" />
             {tag.name}
             <sup>{tag.count}</sup>
