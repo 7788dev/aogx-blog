@@ -1,19 +1,18 @@
 ---
 // giscus 评论（基于 GitHub Discussions）
 // 前置条件（一次性）：仓库公开 + 在 https://github.com/apps/giscus 安装并授权本仓库
-// 主题处理：挂载时读取站内当前主题创建实例（避免懒加载场景下出现白色评论框），
-//           之后切换主题时通过 postMessage 同步（SiteHeader 切换会广播 themechange 事件）
-const GISCUS_REPO = '7788dev/aogx-blog'
-const GISCUS_REPO_ID = 'R_kgDOU6gRug'
-// General 类别：任何登录 GitHub 的访客都能开启讨论串（无需维护者先评论）
-const GISCUS_CATEGORY = 'General'
-const GISCUS_CATEGORY_ID = 'DIC_kwDOU6gRus4DHAJs'
+// 类别用 General：任何登录 GitHub 的访客都能开启讨论串（无需维护者先评论）
+// 主题处理：挂载时读取站内当前主题，切换时 postMessage 同步（SiteHeader 广播 themechange）
+// 注意：下方常量必须写在 <script>（浏览器端）内，frontmatter 常量无法被客户端脚本访问
 ---
 
 <section class="comments" id="giscus-container"></section>
 
 <script>
-  const CONTAINER_ID = 'giscus-container'
+  const GISCUS_REPO = '7788dev/aogx-blog'
+  const GISCUS_REPO_ID = 'R_kgDOU6gRug'
+  const GISCUS_CATEGORY = 'General'
+  const GISCUS_CATEGORY_ID = 'DIC_kwDOU6gRus4DHAJs'
   const GISCUS_ORIGIN = 'https://giscus.app'
 
   const currentTheme = () =>
