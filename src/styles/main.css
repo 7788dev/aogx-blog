@@ -457,6 +457,34 @@ h4 {
   margin-top: 46px;
 }
 
+.section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.section-row h2 {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+  font-size: 0.88rem;
+  transition: color 0.2s;
+}
+
+.view-all:hover {
+  color: var(--accent);
+}
+
 .search-box {
   display: flex;
   align-items: center;
@@ -486,6 +514,67 @@ h4 {
 
 .search-box:focus-within .kbd {
   display: none;
+}
+
+/* ========== 全部文章（归档）：筛选 + 年月分组 ========== */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 3px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 0.84rem;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.month-group {
+  margin-bottom: 8px;
+}
+
+.month-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 26px 0 4px;
+}
+
+.month-label {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.month-count {
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
 }
 
 /* ========== 文章列表行（首页 / 归档 / 筛选页共用） ========== */

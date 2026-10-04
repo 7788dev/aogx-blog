@@ -7,31 +7,48 @@ const posts = (await getCollection('blog')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 )
 
+// 全部文章页：按年月分组 + 分类筛选 + 搜索
 const groups = []
-const byYear = new Map()
+const byMonth = new Map()
 for (const post of posts) {
-  const year = String(post.data.date.getFullYear())
-  if (!byYear.has(year)) {
-    byYear.set(year, [])
-    groups.push([year, byYear.get(year)])
+  const d = post.data.date
+  const month = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`
+  if (!byMonth.has(month)) {
+    byMonth.set(month, [])
+    groups.push([month, byMonth.get(month)])
   }
-  byYear.get(year).push(post)
+  byMonth.get(month).push(post)
 }
+
+const categories = [...new Set(posts.map((p) => p.data.category))].sort((a, b) =>
+  a.localeCompare(b, 'zh'),
+)
 ---
 
 <BaseLayout title="归档">
   <div class="container">
     <div class="page-head">
-      <h1>归档</h1>
-      <p class="page-sub">共 {posts.length} 篇文章，路虽远，行则将至。</p>
+      <h1>全部文章</h1>
+      <p class="page-sub">共 {posts.length} 篇，按年月归档，路虽远，行则将至。</p>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input id="archive-search" type="search" placeholder="搜索文章…" autocomplete="off" />
+        <span class="kbd">Ctrl K</span>
+      </div>
+      <div class="chip-row" role="group" aria-label="按分类筛选">
+        <button class="chip active" type="button" data-cat="全部">全部</button>
+        {categories.map((cat) => <button class="chip" type="button" data-cat={cat}>{cat}</button>)}
+      </div>
     </div>
 
     {
-      groups.map(([year, list]) => (
-        <div class="year-group">
-          <div class="year-head">
-            <span class="year-name">{year}</span>
-            <span class="year-count">{list.length} 篇</span>
+      groups.map(([month, list]) => (
+        <div class="month-group" data-month-group>
+          <div class="month-head">
+            <span class="month-label">{month}</span>
+            <span class="month-count">{list.length} 篇</span>
           </div>
           <div class="post-list">
             {list.map((post) => (
@@ -41,5 +58,48 @@ for (const post of posts) {
         </div>
       ))
     }
+    <div id="archive-empty" class="state-hint" hidden>没有找到匹配的文章，换个条件试试？</div>
   </div>
 </BaseLayout>
+
+<script>
+  const input = document.getElementById('archive-search')
+  const chips = [...document.querySelectorAll('.chip[data-cat]')]
+  const rows = [...document.querySelectorAll('.post-row')]
+  const monthGroups = [...document.querySelectorAll('[data-month-group]')]
+  const empty = document.getElementById('archive-empty')
+
+  let activeCat = '全部'
+
+  function apply() {
+    const keyword = input?.value.trim().toLowerCase() ?? ''
+    rows.forEach((row) => {
+      const catOk = activeCat === '全部' || row.dataset.category === activeCat
+      const kwOk = !keyword || (row.dataset.search || '').toLowerCase().includes(keyword)
+      row.style.display = catOk && kwOk ? '' : 'none'
+    })
+    monthGroups.forEach((group) => {
+      const visible = group.querySelectorAll('.post-row:not([style*="none"])').length
+      group.style.display = visible ? '' : 'none'
+    })
+    const total = rows.filter((r) => r.style.display !== 'none').length
+    if (empty) empty.hidden = total > 0
+  }
+
+  input?.addEventListener('input', apply)
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      activeCat = chip.dataset.cat
+      chips.forEach((c) => c.classList.toggle('active', c === chip))
+      apply()
+    })
+  })
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault()
+      input?.focus()
+    }
+  })
+</script>

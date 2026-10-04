@@ -8,6 +8,7 @@ const { post } = Astro.props
 <a
   href={withBase(`/posts/${post.id}/`)}
   class="post-row"
+  data-category={post.data.category}
   data-search={[post.data.title, post.data.category, ...post.data.tags].join(' ')}
 >
   <span class="row-title">{post.data.title}</span>

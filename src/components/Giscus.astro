@@ -1,48 +1,79 @@
 ---
 // giscus 评论（基于 GitHub Discussions）
 // 前置条件（一次性）：仓库公开 + 在 https://github.com/apps/giscus 安装并授权本仓库
-// 主题联动：跟随站内深浅色切换（SiteHeader 切换时会广播 themechange 事件）
-
-// 以下两个 ID 来自 giscus.app 配置页（可用 GitHub GraphQL API 查询得到）
+// 主题处理：挂载时读取站内当前主题创建实例（避免懒加载场景下出现白色评论框），
+//           之后切换主题时通过 postMessage 同步（SiteHeader 切换会广播 themechange 事件）
 const GISCUS_REPO = '7788dev/aogx-blog'
 const GISCUS_REPO_ID = 'R_kgDOU6gRug'
 const GISCUS_CATEGORY = 'Announcements'
 const GISCUS_CATEGORY_ID = 'DIC_kwDOU6gRus4DHAJr'
 ---
 
-<section class="comments">
-  <script
-    is:inline
-    src="https://giscus.app/client.js"
-    data-repo={GISCUS_REPO}
-    data-repo-id={GISCUS_REPO_ID}
-    data-category={GISCUS_CATEGORY}
-    data-category-id={GISCUS_CATEGORY_ID}
-    data-mapping="pathname"
-    data-strict="0"
-    data-reactions-enabled="1"
-    data-emit-metadata="0"
-    data-input-position="top"
-    data-theme="light"
-    data-lang="zh-CN"
-    data-loading="lazy"
-    crossorigin="anonymous"
-    async
-  ></script>
-</section>
+<section class="comments" id="giscus-container"></section>
 
 <script>
-  // 深浅色切换时同步 giscus 主题
+  const CONTAINER_ID = 'giscus-container'
+  const GISCUS_ORIGIN = 'https://giscus.app'
+
+  const currentTheme = () =>
+    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+
+  function mount() {
+    const container = document.getElementById(CONTAINER_ID)
+    if (!container || container.dataset.mounted === 'true') return
+    container.dataset.mounted = 'true'
+
+    const script = document.createElement('script')
+    script.src = 'https://giscus.app/client.js'
+    script.async = true
+    script.crossOrigin = 'anonymous'
+    const attrs = {
+      'data-repo': '7788dev/aogx-blog',
+      'data-repo-id': 'R_kgDOU6gRug',
+      'data-category': 'Announcements',
+      'data-category-id': 'DIC_kwDOU6gRus4DHAJr',
+      'data-mapping': 'pathname',
+      'data-strict': '0',
+      'data-reactions-enabled': '1',
+      'data-emit-metadata': '0',
+      'data-input-position': 'top',
+      'data-lang': 'zh-CN',
+    }
+    for (const [key, value] of Object.entries(attrs)) script.setAttribute(key, value)
+    // 关键：以挂载时刻的站内主题初始化，深色页面不会再出现白色评论框
+    script.setAttribute('data-theme', currentTheme())
+    container.appendChild(script)
+  }
+
   function syncGiscusTheme() {
-    const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
     document
       .querySelector('iframe.giscus-frame')
-      ?.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app')
+      ?.contentWindow?.postMessage(
+        { giscus: { setConfig: { theme: currentTheme() } } },
+        GISCUS_ORIGIN,
+      )
   }
 
   document.addEventListener('themechange', syncGiscusTheme)
-  // giscus iframe 是懒加载的，加载完成后补一次同步
-  window.addEventListener('load', syncGiscusTheme)
+
+  // 懒加载：滚动接近评论区时才挂载（自行控制，保证挂载时能读到最新主题）
+  const container = document.getElementById(CONTAINER_ID)
+  if (container) {
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            observer.disconnect()
+            mount()
+          }
+        },
+        { rootMargin: '200px 0px' },
+      )
+      observer.observe(container)
+    } else {
+      mount()
+    }
+  }
 </script>
 
 <style>
