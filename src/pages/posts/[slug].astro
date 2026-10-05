@@ -27,6 +27,13 @@ const body = post.body ?? ''
 <BaseLayout title={post.data.title} description={post.data.excerpt}>
   <div class="container">
     <article class="post-page">
+      <nav class="crumb" aria-label="面包屑">
+        <a href={withBase('/')}>首页</a>
+        <span> / </span>
+        <a href={withBase('/archive/')}>归档</a>
+        <span> / </span>
+        <span>正文</span>
+      </nav>
       <header class="post-header">
         <a class="post-cat" href={withBase(`/category/${post.data.category}/`)}>{post.data.category}</a>
         <h1 class="post-title">{post.data.title}</h1>
@@ -85,7 +92,7 @@ const body = post.body ?? ''
       </nav>
 
       <div class="post-back">
-        <a class="text-link" href={withBase('/archive/')}>← 返回归档</a>
+        <a id="smart-back" class="text-link" href={withBase('/archive/')}>← 返回全部文章</a>
       </div>
 
       <Giscus />
@@ -145,5 +152,36 @@ const body = post.body ?? ''
         if (target) observer.observe(target)
       })
     }
+  }
+</script>
+
+<script>
+  // 智能返回：底部链接按来路动态变化（首页 / 归档 / 分类 / 标签），
+  // 直接打开或来路未知时默认返回全部文章
+  const back = document.getElementById('smart-back')
+  const base = import.meta.env.BASE_URL.replace(/\/+$/, '')
+
+  try {
+    if (back && document.referrer) {
+      const url = new URL(document.referrer, location.origin)
+      if (url.origin === location.origin) {
+        const path = url.pathname.replace(/\/+$/, '').slice(base.length) || '/'
+        if (path === '/') {
+          back.href = url.pathname
+          back.textContent = '← 返回首页'
+        } else if (path.startsWith('/archive')) {
+          back.href = url.pathname
+          back.textContent = '← 返回全部文章'
+        } else if (path.startsWith('/category')) {
+          back.href = url.pathname
+          back.textContent = '← 返回分类页'
+        } else if (path.startsWith('/tag')) {
+          back.href = url.pathname
+          back.textContent = '← 返回标签页'
+        }
+      }
+    }
+  } catch {
+    /* referrer 解析失败则保持默认 */
   }
 </script>
