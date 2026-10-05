@@ -36,6 +36,8 @@ jobs:
           fi
           curl -fsSL --max-time 60 "https://www.bing.com${URL}" -o public/images/daily-bg.jpg
           printf '{\n  "date": "%s",\n  "copyright": %s\n}\n' "$(date +%F)" "$(echo "$COPYRIGHT" | jq -Rs .)" > public/images/daily-bg.json
+          # 顺带同步 GitHub 头像（关于页自托管，国内秒开）
+          curl -fsSL --max-time 30 -L "https://github.com/7788dev.png" -o public/images/avatar.png
           echo "已下载当日背景图（$(du -h public/images/daily-bg.jpg | cut -f1)）"
 
       - name: Commit if changed

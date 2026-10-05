@@ -3,16 +3,24 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import LogoMark from '../components/LogoMark.astro'
 import AppIcon from '../components/AppIcon.astro'
 import { siteConfig } from '../config.js'
+import { withBase } from '../utils/links.js'
+
+// 头像支持两种写法：站内相对路径（走 withBase）或任意绝对 URL
+const avatarSrc = siteConfig.avatar
+  ? siteConfig.avatar.startsWith('http')
+    ? siteConfig.avatar
+    : withBase(siteConfig.avatar)
+  : ''
 ---
 
 <BaseLayout title="关于">
   <div class="container">
     <div class="about-head">
       {
-        siteConfig.avatar ? (
+        avatarSrc ? (
           <img
             class="avatar-img"
-            src={siteConfig.avatar}
+            src={avatarSrc}
             alt={`${siteConfig.author} 的头像`}
             width="72"
             height="72"
