@@ -8,7 +8,21 @@ import { siteConfig } from '../config.js'
 <BaseLayout title="关于">
   <div class="container">
     <div class="about-head">
-      <LogoMark size={72} />
+      {
+        siteConfig.avatar ? (
+          <img
+            class="avatar-img"
+            src={siteConfig.avatar}
+            alt={`${siteConfig.author} 的头像`}
+            width="72"
+            height="72"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          />
+        ) : (
+          <LogoMark size={72} />
+        )
+      }
       <h1>关于 {siteConfig.name}</h1>
     </div>
 

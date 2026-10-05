@@ -7,6 +7,8 @@ export const siteConfig = {
   bio: '喜欢深度思考，在这里分享自己的想法与经验。',
   description: '一个关于思考、经验与生活随想的个人博客',
   author: 'Aogx',
+  // 头像图片地址（关于页展示）：可换成任意图片 URL；留空则显示站点 Logo
+  avatar: 'https://github.com/7788dev.png',
   since: 2026,
   github: 'https://github.com/7788dev',
   email: 'mlooks@126.com',
