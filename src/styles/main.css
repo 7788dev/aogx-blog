@@ -350,7 +350,7 @@ h4 {
   /* 高度去饱和：任何彩色风景都归入冷峻的黑白灰调 */
   filter: grayscale(0.85) contrast(1.05) brightness(0.9);
   opacity: 0;
-  transition: opacity 1.4s ease;
+  transition: opacity 0.5s ease;
 }
 
 .hero.has-photo .hero-photo {

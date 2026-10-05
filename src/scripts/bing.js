@@ -1,19 +1,47 @@
-// 必应每日一图（浏览器端，按可用性逐级降级）：
-// 1. 当日 localStorage 缓存，避免每次进站重新探测
-// 2. 官方 JSON 接口（含版权信息）：直连 → CORS 代理，逐个尝试
-// 3. 免 JSON 的镜像直链（服务端 302 到当日图片）
-// 4. Picsum 按日期定种的灰度图（保底，网络受限时基本可达）
-// 5. 全部失败则不处理，首页展示纯渐变寒夜背景
+// 必应每日一图（浏览器端）——速度优先策略：
+// 1. 当日 localStorage 缓存：直接命中，秒显
+// 2. 多源并行竞速：必应镜像直链与保底图同时开跑，最先加载成功者胜出，
+//    其余立即中止；单一来源超时 6s，整体不再串行等待
+// 3. 胜出后后台尝试补拉官方版权信息（不阻塞首屏）
+// 4. 全部失败：保持寒夜渐变背景
 
 const CACHE_KEY = 'bing-daily'
 const CACHE_TTL = 6 * 60 * 60 * 1000
+const SOURCE_TIMEOUT = 5000
 
-const BING_JSON = 'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN'
-const MIRROR_IMAGES = [
+// 镜像直链（服务端 302 到当日图片，省去 JSON 往返）
+const SOURCES = [
   'https://bing.img.run/1920x1080.php',
   'https://api.vvhan.com/api/bingimg',
   'https://api.dujin.org/bing/1920.php',
 ]
+
+/** Picsum 按当天日期定种：同一天稳定同一张，效果等同「每日一图」 */
+function picsumUrl() {
+  const d = new Date()
+  const seed = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+  return `https://picsum.photos/seed/${seed}/1920/1080?grayscale`
+}
+
+/** 预加载单张图片，成功返回 URL */
+function probeImage(url, ms = SOURCE_TIMEOUT) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const timer = setTimeout(() => {
+      img.src = ''
+      reject(new Error('timeout'))
+    }, ms)
+    img.onload = () => {
+      clearTimeout(timer)
+      resolve(url)
+    }
+    img.onerror = () => {
+      clearTimeout(timer)
+      reject(new Error('load error'))
+    }
+    img.src = url
+  })
+}
 
 function readCache() {
   try {
@@ -33,76 +61,46 @@ function writeCache(data) {
   }
 }
 
-function fetchJsonWithTimeout(url, ms = 6000) {
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), ms)
-  return fetch(url, { signal: ctrl.signal })
-    .then(async (res) => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return res.json()
-    })
-    .finally(() => clearTimeout(timer))
-}
+/** 并行竞速：最先加载成功的图片 URL 胜出，其余立即中止下载 */
+function raceImages(urls) {
+  return new Promise((resolve) => {
+    let settled = false
+    let pending = urls.length
+    const images = new Map()
 
-/** 预加载验证图片真实可显示（<img> 不受 CORS 限制） */
-function probeImage(url, ms = 9000) {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const timer = setTimeout(() => {
-      img.src = ''
-      reject(new Error('timeout'))
-    }, ms)
-    img.onload = () => {
-      clearTimeout(timer)
+    urls.forEach((url) => {
+      const img = new Image()
+      images.set(url, img)
+      const timer = setTimeout(() => finish(url, false), SOURCE_TIMEOUT)
+      img.onload = () => {
+        clearTimeout(timer)
+        finish(url, true)
+      }
+      img.onerror = () => {
+        clearTimeout(timer)
+        finish(url, false)
+      }
+      img.src = url
+    })
+
+    function finish(url, ok) {
+      if (settled) return
+      if (!ok) {
+        pending -= 1
+        if (pending === 0) {
+          settled = true
+          resolve(null)
+        }
+        return
+      }
+      settled = true
+      // 中止其余仍在下载的图片，节省访客流量
+      images.forEach((img, imageUrl) => {
+        if (imageUrl !== url) img.src = ''
+      })
       resolve(url)
     }
-    img.onerror = () => {
-      clearTimeout(timer)
-      reject(new Error('load error'))
-    }
-    img.src = url
   })
-}
-
-async function tryOfficialJson() {
-  const encoded = encodeURIComponent(BING_JSON)
-  const candidates = [
-    BING_JSON,
-    `https://api.allorigins.win/raw?url=${encoded}`,
-    `https://corsproxy.io/?url=${encoded}`,
-  ]
-  for (const candidate of candidates) {
-    try {
-      const data = await fetchJsonWithTimeout(candidate)
-      const shot = data?.images?.[0]
-      if (!shot?.url) continue
-      const url = shot.url.startsWith('http') ? shot.url : `https://www.bing.com${shot.url}`
-      await probeImage(url)
-      return { url, copyright: shot.copyright ?? '' }
-    } catch {
-      /* 尝试下一候选 */
-    }
-  }
-  return null
-}
-
-async function tryMirrors() {
-  for (const url of MIRROR_IMAGES) {
-    try {
-      await probeImage(url)
-      return { url, copyright: '' }
-    } catch {
-      /* 尝试下一镜像 */
-    }
-  }
-  return null
-}
-
-/** Picsum 按当天日期定种：同一天稳定同一张，效果等同「每日一图」 */
-function picsumUrl() {
-  const d = new Date()
-  const seed = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
-  return `https://picsum.photos/seed/${seed}/1920/1080?grayscale`
 }
 
 function apply(data) {
@@ -117,6 +115,36 @@ function apply(data) {
   }
 }
 
+/** 出图后后台补拉官方版权信息（可选增强，失败静默） */
+async function enrichCopyright(result) {
+  if (result.source !== 'bing') return
+  const encoded = encodeURIComponent(
+    'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN',
+  )
+  const candidates = [
+    `https://api.allorigins.win/raw?url=${encoded}`,
+    `https://corsproxy.io/?url=${encoded}`,
+  ]
+  for (const candidate of candidates) {
+    try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 4000)
+      const res = await fetch(candidate, { signal: ctrl.signal })
+      clearTimeout(timer)
+      if (!res.ok) continue
+      const data = await res.json()
+      const shot = data?.images?.[0]
+      if (!shot?.copyright) continue
+      result.copyright = shot.copyright
+      writeCache(result)
+      apply(result) // 仅更新版权行，背景已是同一张图
+      return
+    } catch {
+      /* 尝试下一候选 */
+    }
+  }
+}
+
 async function initBingHero() {
   const cached = readCache()
   if (cached) {
@@ -124,20 +152,20 @@ async function initBingHero() {
     return
   }
 
-  // 必应链路限时 12s，超时直接走保底，避免首屏久等
-  const fromBing = await Promise.race([
-    tryOfficialJson().then((r) => r || tryMirrors()),
-    new Promise((resolve) => setTimeout(() => resolve(null), 12000)),
-  ])
-  if (fromBing) {
-    writeCache(fromBing)
-    apply(fromBing)
+  // 第一阶段：必应镜像直链竞速（5s 内谁先成功用谁）
+  const mirrorUrl = await raceImages(SOURCES)
+  if (mirrorUrl) {
+    const result = { url: mirrorUrl, copyright: '', source: 'bing' }
+    writeCache(result)
+    apply(result)
+    enrichCopyright(result)
     return
   }
 
+  // 第二阶段：按日定种保底图——镜像全挂时它几乎一定可达，单独等待不与之赛跑
   try {
-    await probeImage(picsumUrl(), 8000)
-    const result = { url: picsumUrl(), copyright: '' }
+    const url = await probeImage(picsumUrl(), 10000)
+    const result = { url, copyright: '', source: 'picsum' }
     writeCache(result)
     apply(result)
   } catch {
