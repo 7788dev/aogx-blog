@@ -22,11 +22,8 @@ const fullTitle = title ? `${title} · ${siteConfig.name}` : `${siteConfig.name}
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="alternate" type="application/rss+xml" title={siteConfig.name} href={withBase('rss.xml')} />
-    <!-- 首屏背景图来源预连接：握手先行，出图更快 -->
-    <link rel="preconnect" href="https://bing.img.run" crossorigin />
-    <link rel="preconnect" href="https://picsum.photos" crossorigin />
-    <link rel="dns-prefetch" href="https://api.vvhan.com" />
-    <link rel="dns-prefetch" href="https://api.dujin.org" />
+    <!-- 每日背景图已烘焙为站内资源（定时任务自动更新），preload 让首屏立即开始加载 -->
+    <link rel="preload" as="image" href={withBase('images/daily-bg.jpg')} />
     <meta name="generator" content={Astro.generator} />
     <title>{fullTitle}</title>
     <script is:inline>

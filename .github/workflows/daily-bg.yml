@@ -1,0 +1,57 @@
+name: Update Daily Background
+
+# 每日抓取必应当日图片并提交为站内资源（UTC 00:30 = 北京 08:30），
+# 提交后自动触发部署工作流，背景图与站点同源同速
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: daily-bg
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Bing daily image
+        run: |
+          mkdir -p public/images
+          if ! JSON=$(curl -fsSL --max-time 30 "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN"); then
+            echo "::warning::抓取必应接口失败，保留旧背景"
+            exit 0
+          fi
+          URL=$(echo "$JSON" | jq -r '.images[0].url // empty')
+          COPYRIGHT=$(echo "$JSON" | jq -r '.images[0].copyright // empty')
+          if [ -z "$URL" ]; then
+            echo "::warning::接口无图片数据，保留旧背景"
+            exit 0
+          fi
+          curl -fsSL --max-time 60 "https://www.bing.com${URL}" -o public/images/daily-bg.jpg
+          printf '{\n  "date": "%s",\n  "copyright": %s\n}\n' "$(date +%F)" "$(echo "$COPYRIGHT" | jq -Rs .)" > public/images/daily-bg.json
+          echo "已下载当日背景图（$(du -h public/images/daily-bg.jpg | cut -f1)）"
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/images
+          if git diff --cached --quiet; then
+            echo "背景未变化"
+          else
+            git commit -m "chore: 更新每日背景图"
+            git pull --rebase origin main
+            git push
+          fi
+
+      - name: Trigger deploy
+        run: gh workflow run "Deploy to GitHub Pages" --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
