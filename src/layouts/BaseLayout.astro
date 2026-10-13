@@ -28,11 +28,12 @@ const fullTitle = title ? `${title} · ${siteConfig.name}` : `${siteConfig.name}
     <title>{fullTitle}</title>
     <script is:inline>
       // 在应用渲染前读取本地主题设置，避免首屏闪烁
+      // 默认黑夜；仅用户手动切换过才沿用本地偏好
       ;(function () {
         var saved = localStorage.getItem('blog-theme')
-        var theme =
-          saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        document.documentElement.dataset.theme = theme
+        document.documentElement.dataset.theme = saved === 'light' ? 'light' : 'dark'
+        // 首页首图顶到顶端时导航透明悬浮；从页中恢复时直接使用实底
+        if (window.scrollY < 8) document.documentElement.classList.add('at-top')
       })()
     </script>
   </head>

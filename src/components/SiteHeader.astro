@@ -52,4 +52,22 @@ const current =
       document.dispatchEvent(new CustomEvent('themechange'))
     })
   })
+
+  // 首页：首图（含底部渐隐带）或文案滚到导航区之前保持透明悬浮，之后恢复玻璃底色
+  const hero = document.querySelector('.hero')
+  if (hero) {
+    const header = document.querySelector('.site-header')
+    const firstText = hero.querySelector('.hero-content')?.firstElementChild
+    const updateHeader = () => {
+      const hb = header ? header.offsetHeight : 0
+      const fade = parseFloat(getComputedStyle(hero, '::after').height) || 0
+      const heroClear = hero.getBoundingClientRect().bottom > hb + fade + 8
+      const textClear = !firstText || firstText.getBoundingClientRect().top > hb + 12
+      document.documentElement.classList.toggle('at-top', heroClear && textClear)
+    }
+    window.addEventListener('scroll', updateHeader, { passive: true })
+    window.addEventListener('resize', updateHeader)
+    window.addEventListener('load', updateHeader)
+    window.addEventListener('pageshow', updateHeader)
+  }
 </script>

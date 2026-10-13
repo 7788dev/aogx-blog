@@ -1,12 +1,11 @@
 // 背景图策略（速度优先）：
 // 每日背景由定时任务（.github/workflows/daily-bg.yml）烘焙为站内资源
 // public/images/daily-bg.jpg —— 与站点同源同速，head 里有 preload，进站几乎瞬时显示；
-// 版权信息读取同源 meta JSON；若站内图缺失（新仓库首次部署前），
+// 若站内图缺失（新仓库首次部署前），
 // 退回多源竞速：必应镜像直链 → Picsum 按日定种保底图。
 
 const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '')
 const DAILY_URL = `${BASE}/images/daily-bg.jpg`
-const DAILY_META_URL = `${BASE}/images/daily-bg.json`
 const FALLBACK_SOURCES = [
   'https://bing.img.run/1920x1080.php',
   'https://api.vvhan.com/api/bingimg',
@@ -82,16 +81,11 @@ function raceImages(urls) {
   })
 }
 
-function apply(url, copyright) {
+function apply(url) {
   const photo = document.getElementById('hero-photo')
-  const credit = document.getElementById('hero-credit')
   if (!photo) return
   photo.style.backgroundImage = `url("${url}")`
   photo.closest('.hero')?.classList.add('has-photo')
-  if (credit && copyright) {
-    credit.textContent = `必应每日一图 · ${copyright}`
-    credit.hidden = false
-  }
 }
 
 async function initBingHero() {
@@ -99,12 +93,6 @@ async function initBingHero() {
   try {
     await probeImage(DAILY_URL, 8000)
     apply(DAILY_URL)
-    fetch(DAILY_META_URL)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((meta) => {
-        if (meta?.copyright) apply(DAILY_URL, meta.copyright)
-      })
-      .catch(() => {})
     return
   } catch {
     /* 站内图缺失，走回退竞速 */

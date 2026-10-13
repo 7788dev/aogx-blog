@@ -12,8 +12,6 @@ const posts = (await getCollection('blog')).sort(
 
 // 首页只展示最新几篇，全部文章走「查看全部」进入归档页
 const latest = posts.slice(0, 6)
-const catCount = new Set(posts.map((p) => p.data.category)).size
-const tagCount = new Set(posts.flatMap((p) => p.data.tags)).size
 ---
 
 <BaseLayout>
@@ -25,13 +23,7 @@ const tagCount = new Set(posts.flatMap((p) => p.data.tags)).size
       <p class="hero-latin">{siteConfig.latinName.toUpperCase()}</p>
       <h1 class="hero-title">{siteConfig.name}</h1>
       <p class="hero-motto">{siteConfig.motto}</p>
-      <p class="hero-stats">
-        {posts.length} 篇文章 · {catCount} 个分类 · {tagCount} 个标签
-      </p>
-      <p class="hero-credit" id="hero-credit" hidden></p>
     </div>
-
-    <span class="hero-scroll" aria-hidden="true"></span>
   </section>
 
   <section class="container posts-section">
